@@ -28,6 +28,7 @@ import {
   Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import Markdown from 'react-markdown';
 
 // --- Types ---
 
@@ -97,6 +98,7 @@ export default function App() {
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -120,7 +122,9 @@ export default function App() {
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const config: any = {};
+      const config: any = {
+        systemInstruction: `You are a financial intelligence assistant. ${result ? `The user has uploaded a document which has been parsed with the following results: ${JSON.stringify(result)}. You can help the user analyze this data, explain line items, or perform calculations based on it.` : "You help users analyze financial documents and data."}`
+      };
       if (useThinking) {
         config.thinkingConfig = { thinkingLevel: ThinkingLevel.HIGH };
       }
@@ -833,7 +837,9 @@ export default function App() {
                           {m.role === 'user' ? 'Operator' : 'Intelligence'}
                           {m.isThinking && <span className="text-emerald-600 font-bold">[THINKING ACTIVE]</span>}
                         </div>
-                        <p className="text-xs leading-relaxed whitespace-pre-wrap">{m.text}</p>
+                        <div className="text-xs leading-relaxed markdown-body">
+                          <Markdown>{m.text}</Markdown>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1012,6 +1018,84 @@ export default function App() {
           <span>MODE: HYPER-API READY</span>
         </div>
       </footer>
+
+      {/* Floating Chatbot */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+        <AnimatePresence>
+          {isFloatingChatOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="w-80 h-[450px] bg-[#E4E3E0] border border-[#141414] rounded-sm shadow-2xl flex flex-col overflow-hidden"
+            >
+              <div className="p-3 bg-[#141414] text-[#E4E3E0] flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Bot size={16} />
+                  <span className="text-[10px] mono-text font-bold uppercase">Quick Intelligence</span>
+                </div>
+                <button 
+                  onClick={() => setIsFloatingChatOpen(false)}
+                  className="opacity-60 hover:opacity-100 transition-opacity"
+                >
+                  <ChevronRight size={16} className="rotate-90" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#DCDAD7]">
+                {chatMessages.length === 0 && (
+                  <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-2">
+                    <MessageSquare size={32} strokeWidth={1} />
+                    <p className="text-[9px] mono-text">Awaiting input...</p>
+                  </div>
+                )}
+                {chatMessages.map((m, i) => (
+                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[90%] p-3 rounded-sm text-[11px] ${m.role === 'user' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-white border border-[#141414]/10 shadow-sm'}`}>
+                      <div className="text-xs leading-relaxed markdown-body">
+                        <Markdown>{m.text}</Markdown>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white border border-[#141414]/10 p-2 rounded-sm flex items-center gap-2">
+                      <Loader2 size={12} className="animate-spin opacity-40" />
+                      <span className="text-[8px] mono-text opacity-40 uppercase animate-pulse">Thinking...</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <form onSubmit={handleChatSubmit} className="p-3 border-t border-[#141414] bg-white flex gap-2">
+                <input 
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask intelligence..."
+                  className="flex-1 bg-[#F5F5F5] border border-[#141414]/10 rounded-sm px-3 py-2 text-[10px] focus:outline-none focus:border-[#141414]"
+                />
+                <button 
+                  type="submit"
+                  disabled={isChatLoading || !chatInput.trim()}
+                  className="bg-[#141414] text-[#E4E3E0] p-2 rounded-sm hover:bg-[#2a2a2a] disabled:opacity-50"
+                >
+                  <Send size={14} />
+                </button>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button 
+          onClick={() => setIsFloatingChatOpen(!isFloatingChatOpen)}
+          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all ${isFloatingChatOpen ? 'bg-[#141414] text-[#E4E3E0] rotate-90' : 'bg-[#141414] text-[#E4E3E0] hover:scale-110'}`}
+        >
+          {isFloatingChatOpen ? <ChevronRight size={24} /> : <Bot size={24} />}
+        </button>
+      </div>
     </div>
   );
 }

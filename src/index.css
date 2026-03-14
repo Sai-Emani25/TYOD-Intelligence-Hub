@@ -32,3 +32,13 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+.markdown-body h1 { @apply text-lg font-bold mb-2; }
+.markdown-body h2 { @apply text-base font-bold mb-2; }
+.markdown-body h3 { @apply text-sm font-bold mb-1; }
+.markdown-body p { @apply mb-2; }
+.markdown-body ul { @apply list-disc pl-4 mb-2; }
+.markdown-body ol { @apply list-decimal pl-4 mb-2; }
+.markdown-body code { @apply bg-[#141414]/10 px-1 rounded font-mono text-[10px]; }
+.markdown-body pre { @apply bg-[#141414] text-emerald-400 p-3 rounded-sm font-mono text-[10px] overflow-x-auto mb-2; }
+.markdown-body blockquote { @apply border-l-2 border-[#141414]/20 pl-3 italic opacity-60 mb-2; }
